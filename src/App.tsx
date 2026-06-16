@@ -8,7 +8,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
   import.meta.url
 ).toString();
 
-// Definimos la estructura de cómo se guardará cada factura procesada
 interface ProcessedFile {
   id: string;
   originalName: string;
@@ -19,7 +18,7 @@ interface ProcessedFile {
 export default function App() {
   const [processedFiles, setProcessedFiles] = useState<ProcessedFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [progress, setProgress] = useState({ current: 0, total: 0 }); // <-- Aquí está la variable
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -32,7 +31,7 @@ export default function App() {
 
     for (let i = 0; i < files.length; i++) {
       const uploadedFile = files[i];
-      setProgress((prev) => ({ ...prev, current: i + 1 }));
+      setProgress((prev) => ({ ...prev, current: i + 1 })); // <-- Aquí se actualiza
 
       try {
         const arrayBuffer = await uploadedFile.arrayBuffer();
@@ -92,13 +91,11 @@ export default function App() {
       }
     }
 
-    // Unimos los nuevos archivos con los que ya estaban en la lista (por si el usuario sube en varias tandas)
     setProcessedFiles(prev => [...prev, ...newProcessedList]);
     setIsProcessing(false);
     event.target.value = '';
   };
 
-  // NUEVA FUNCIÓN: Descargar un solo archivo individualmente
   const handleDownloadSingle = (fileData: ProcessedFile) => {
     const url = URL.createObjectURL(fileData.fileBlob);
     const link = document.createElement('a');
@@ -110,10 +107,10 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  // FUNCIÓN: Empaqueta todo en un ZIP y luego resetea
   const handleDownloadZipAndReset = async () => {
     if (processedFiles.length === 0) return;
     setIsProcessing(true);
+    setProgress({ current: 0, total: 0 }); // Limpiamos el progreso para que muestre el mensaje de ZIP
 
     try {
       const zip = new JSZip();
@@ -134,7 +131,6 @@ export default function App() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      // Limpiamos la pantalla después de descargar el ZIP
       setProcessedFiles([]);
 
     } catch (error) {
@@ -164,9 +160,12 @@ export default function App() {
           style={{ marginBottom: '10px', fontSize: '16px' }}
         />
         
+        {/* SOLUCIÓN: Usamos la variable 'progress' de forma dinámica en la interfaz */}
         {isProcessing && (
           <div style={{ marginTop: '15px', color: '#aa3bff', fontWeight: 'bold' }}>
-            ⏳ Procesando y empaquetando archivos...
+            {progress.total > 0 
+              ? `⏳ Analizando PDFs: ${progress.current} de ${progress.total} archivos...` 
+              : `📦 Empaquetando todo en archivo ZIP...`}
           </div>
         )}
       </div>
@@ -196,7 +195,6 @@ export default function App() {
                       {fileData.newName}
                     </td>
                     <td style={{ padding: '10px', textAlign: 'center' }}>
-                      {/* BOTÓN DE DESCARGA INDIVIDUAL */}
                       <button 
                         onClick={() => handleDownloadSingle(fileData)}
                         style={{ padding: '6px 12px', backgroundColor: '#e8f5e9', color: '#2e7d32', border: '1px solid #a5d6a7', borderRadius: '4px', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold' }}
